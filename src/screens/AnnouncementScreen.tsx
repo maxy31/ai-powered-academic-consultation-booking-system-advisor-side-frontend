@@ -98,7 +98,7 @@ const AnnouncementScreen = () => {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safe}>
+  <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
         {loading ? (
           <ActivityIndicator size="large" color="#8C8CFF" />
@@ -125,7 +125,7 @@ const AnnouncementScreen = () => {
           ))
         )}
       </ScrollView>
-      {hasToken && (
+  {hasToken && (
         <TouchableOpacity
           style={styles.fab}
           onPress={() => navigation.navigate('CreateAnnouncement')}

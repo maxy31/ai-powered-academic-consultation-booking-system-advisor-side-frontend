@@ -10,13 +10,15 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../context/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const LoginScreen = ({ navigation }: any) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     setLoading(true);
@@ -28,9 +30,9 @@ const LoginScreen = ({ navigation }: any) => {
       });
       const text = await res.text();
       if (res.ok) {
-        const data = JSON.parse(text);
-        await AsyncStorage.setItem('jwtToken', data.token);
-        navigation.replace('Main');
+  const data = JSON.parse(text);
+  await login(data.token);
+  navigation.replace('Main');
       } else {
         Alert.alert('Login Failed', 'Invalid credentials');
       }
