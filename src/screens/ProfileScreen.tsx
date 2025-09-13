@@ -120,7 +120,6 @@ const ProfileScreen = () => {
         </View>
       </View>
       <ActionButton text="Upload Timetable" onPress={() => navigation.navigate('UploadTimetable')} />
-      <ActionButton text="Consultation History" onPress={() => {}} />
       <ActionButton text="Edit Profile" onPress={() => navigation.navigate('EditProfile')} />
       <ActionButton text="Log Out" onPress={handleLogout} />
     </ScrollView>

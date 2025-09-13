@@ -8,13 +8,6 @@ export default function NotificationsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.statusBar}>
-        <Text style={styles.statusText}>Status: {connectionStatus}</Text>
-        <TouchableOpacity onPress={reconnect} style={styles.reconnectBtn}><Text style={styles.reconnectText}>Reconnect</Text></TouchableOpacity>
-        <TouchableOpacity onPress={testLocalNotification} style={[styles.reconnectBtn,{marginLeft:8,backgroundColor:'#5B5BFF'}]}>
-          <Text style={styles.reconnectText}>Test</Text>
-        </TouchableOpacity>
-      </View>
       <FlatList
         data={notifications}
         keyExtractor={item => String(item.id)}
