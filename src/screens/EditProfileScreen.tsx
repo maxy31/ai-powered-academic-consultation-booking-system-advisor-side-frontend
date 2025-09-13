@@ -10,6 +10,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Modal,
+  FlatList,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
@@ -22,10 +24,13 @@ const EditProfileScreen = () => {
     firstName: '',
     lastName: '',
     phoneNumber: '',
-    department: '',
+    departmentId: null as number | null,
   });
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [departments, setDepartments] = useState<Array<{ departmentId: number; departmentName: string }>>([]);
+  const [selectedDepartmentName, setSelectedDepartmentName] = useState<string>('');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -41,8 +46,11 @@ const EditProfileScreen = () => {
           firstName: data.firstName || '',
           lastName: data.lastName || '',
           phoneNumber: data.phoneNumber || '',
-          department: data.department || '',
+          departmentId: (data.departmentId ?? null),
         });
+        if (data.department) {
+          setSelectedDepartmentName(String(data.department));
+        }
       } catch (err) {
         Alert.alert('Error', 'Could not fetch profile');
       } finally {
@@ -50,7 +58,34 @@ const EditProfileScreen = () => {
       }
     };
     fetchProfile();
+
+    const fetchDepartments = async () => {
+      try {
+        const res = await fetch('http://10.0.2.2:8080/api/auth/showDepartments');
+        if (res.ok) {
+          const data = await res.json();
+          const items = Array.isArray(data)
+            ? data
+                .map((d: any) => ({
+                  departmentId: Number(d?.departmentId),
+                  departmentName: String(d?.departmentName ?? ''),
+                }))
+                .filter((d: any) => !!d.departmentId && !!d.departmentName)
+            : [];
+          setDepartments(items);
+        }
+      } catch {}
+    };
+    fetchDepartments();
   }, []);
+
+  // Map departmentId to departmentName for display when data arrives
+  useEffect(() => {
+    if (profile.departmentId && departments.length) {
+      const found = departments.find(d => d.departmentId === profile.departmentId);
+      if (found) setSelectedDepartmentName(found.departmentName);
+    }
+  }, [departments, profile.departmentId]);
 
   const handleUpdate = async () => {
     Alert.alert(
@@ -74,7 +109,7 @@ const EditProfileScreen = () => {
                   firstName: profile.firstName,
                   lastName: profile.lastName,
                   phoneNumber: profile.phoneNumber,
-                  department: profile.department,
+                  departmentId: profile.departmentId,
                 }),
               });
               if (!res.ok) throw new Error('Failed to update profile');
@@ -84,8 +119,9 @@ const EditProfileScreen = () => {
                 firstName: data.firstName,
                 lastName: data.lastName,
                 phoneNumber: data.phoneNumber,
-                department: data.department,
+                departmentId: data.departmentId ?? prev.departmentId,
               }));
+              if (data.department) setSelectedDepartmentName(String(data.department));
               Alert.alert('Success', 'Profile updated successfully', [
                 { text: 'OK', onPress: () => navigation.goBack() },
               ]);
@@ -175,15 +211,52 @@ const EditProfileScreen = () => {
           {/* Department */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Department</Text>
-            <TextInput
+            <TouchableOpacity
               style={styles.input}
-              value={profile.department}
-              onChangeText={text => setProfile({ ...profile, department: text })}
-              placeholder="Enter department"
-              placeholderTextColor="#aaa"
-              maxLength={50}
-            />
+              onPress={() => setModalVisible(true)}
+              activeOpacity={0.86}
+            >
+              <Text style={{ color: selectedDepartmentName ? '#333' : '#aaa', fontSize: 16 }}>
+                {selectedDepartmentName || 'Select department'}
+              </Text>
+            </TouchableOpacity>
           </View>
+
+          {/* Department select modal */}
+          <Modal
+            visible={isModalVisible}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Select Department</Text>
+                <FlatList
+                  data={departments}
+                  keyExtractor={(item) => String(item.departmentId)}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.deptItem}
+                      onPress={() => {
+                        setProfile({ ...profile, departmentId: item.departmentId });
+                        setSelectedDepartmentName(item.departmentName);
+                        setModalVisible(false);
+                      }}
+                    >
+                      <Text style={styles.deptName}>{item.departmentName}</Text>
+                    </TouchableOpacity>
+                  )}
+                  ListEmptyComponent={() => (
+                    <Text style={{ textAlign: 'center', color: '#666' }}>No departments available.</Text>
+                  )}
+                />
+                <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+                  <Text style={styles.closeButtonText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
           {/* Update Button */}
           <TouchableOpacity
             style={styles.actionButton}
@@ -284,6 +357,14 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
   },
+  // Modal styles
+  modalContainer: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '60%' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, textAlign: 'center' },
+  deptItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  deptName: { fontSize: 16 },
+  closeButton: { marginTop: 20, backgroundColor: '#f0f0f0', paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+  closeButtonText: { color: '#333', fontWeight: '700', fontSize: 16 },
 });
 
 export default EditProfileScreen;
