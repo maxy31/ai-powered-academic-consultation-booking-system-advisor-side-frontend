@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
+import { useAuth } from '../context/AuthContext';
 
 type RootStackParamList = {
   Profile: undefined;
@@ -21,14 +22,16 @@ type RootStackParamList = {
 
 const ProfileScreen = () => {
   const [profile, setProfile] = useState<{
-    advisorName: string;
-    username: string;
-    email: string;
-    phoneNumber: string;
-    department: string;
+    advisorName?: string;
+    username?: string;
+    email?: string;
+    phoneNumber?: string;
+    department?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const { logout } = useAuth();
 
   useFocusEffect(
     React.useCallback(() => {
@@ -62,29 +65,26 @@ const ProfileScreen = () => {
       'Confirm Logout',
       'Are you sure you want to log out?',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Confirm',
           style: 'destructive',
           onPress: async () => {
+            if (loggingOut) return;
+            setLoggingOut(true);
             try {
               const token = await AsyncStorage.getItem('jwtToken');
-              await fetch('http://10.0.2.2:8080/api/profile/logout', {
+              // If backend uses session (cookies), include credentials so Spring can invalidate session
+              await fetch('http://10.0.2.2:8080/api/auth/logout', {
                 method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                },
-              });
-              await AsyncStorage.removeItem('jwtToken');
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Login' }],
-              });
-            } catch (err) {
-              Alert.alert('Error', 'Logout failed');
+                headers: { 'Authorization': `Bearer ${token}` },
+                credentials: 'include',
+              }).catch(() => undefined);
+            } catch {}
+            finally {
+              // Always clear local auth and let RootNavigator switch stacks
+              await logout();
+              setLoggingOut(false);
             }
           },
         },
@@ -107,21 +107,13 @@ const ProfileScreen = () => {
               {loading ? '' : profile?.department || 'Department'}
             </Text>
           </View>
-          <Image
-            source={{ uri: 'https://via.placeholder.com/80' }}
-            style={styles.profileImage}
-          />
+          <Image source={{ uri: 'https://via.placeholder.com/80' }} style={styles.profileImage} />
         </View>
-        <View style={styles.divider} />
-        <View style={styles.bookingSection}>
-          <Text style={styles.bookingTitle}>Booking:</Text>
-          <Text style={styles.bookingText}>Date: xx-xx-20xx</Text>
-          <Text style={styles.bookingText}>Time: xx:xx::xx</Text>
-        </View>
+        
       </View>
       <ActionButton text="Upload Timetable" onPress={() => navigation.navigate('UploadTimetable')} />
       <ActionButton text="Edit Profile" onPress={() => navigation.navigate('EditProfile')} />
-      <ActionButton text="Log Out" onPress={handleLogout} />
+  <ActionButton text={loggingOut ? 'Logging Out…' : 'Log Out'} onPress={handleLogout} />
     </ScrollView>
   );
 };
@@ -180,20 +172,9 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     opacity: 0.5,
   },
-  bookingSection: {
-    marginLeft: 4,
-  },
-  bookingTitle: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginBottom: 2,
-  },
-  bookingText: {
-    color: '#fff',
-    fontSize: 15,
-    marginBottom: 2,
-  },
+  bookingSection: { marginLeft: 4 },
+  bookingTitle: { color: '#fff', fontWeight: 'bold', fontSize: 16, marginBottom: 2 },
+  bookingText: { color: '#fff', fontSize: 15, marginBottom: 2 },
   actionButton: {
     width: '90%',
     backgroundColor: '#8C8CFF',
@@ -202,11 +183,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginTop: 10,
   },
-  actionButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 17,
-  },
+  actionButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 17 },
 });
 
 export default ProfileScreen;

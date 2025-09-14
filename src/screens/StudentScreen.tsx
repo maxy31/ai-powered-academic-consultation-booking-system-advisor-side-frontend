@@ -81,7 +81,7 @@ const StudentScreen = () => {
 
   const postAction = async (url: string, appointmentId: number) => {
     const token = await AsyncStorage.getItem('jwtToken');
-    if (!token) throw new Error('未找到登录令牌');
+    if (!token) throw new Error('Missing authentication token');
     const res = await fetch(url, {
       method: 'POST',
       headers: {
@@ -91,7 +91,7 @@ const StudentScreen = () => {
       body: JSON.stringify({ appointmentId }),
     });
     if (!res.ok) {
-      let msg = `服务器返回 ${res.status}`;
+      let msg = `Server responded with ${res.status}`;
       try { const j = await res.json(); if (j.message) msg = j.message; } catch {}
       throw new Error(msg);
     }
@@ -107,25 +107,25 @@ const StudentScreen = () => {
     setActionBusyId(appt.id);
     postAction(`${API_BASE}/confirmAppointment`, appt.id)
       .then(() => {
-        Alert.alert('成功', '已接受预约');
+        Alert.alert('Success', 'The appointment has been accepted');
         return afterActionRefresh();
       })
-      .catch(e => Alert.alert('失败', e.message))
+      .catch(e => Alert.alert('Failed', e.message))
       .finally(() => setActionBusyId(null));
   };
 
   const handleReject = (appt: Appointment) => {
-    Alert.alert('拒绝预约', '确认要拒绝该预约吗？', [
-      { text: '取消', style: 'cancel' },
+    Alert.alert('Reject Appointment', 'Are you sure you want to reject this appointment?', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: '拒绝', style: 'destructive', onPress: () => {
+        text: 'Rejected', style: 'destructive', onPress: () => {
           setActionBusyId(appt.id);
           postAction(`${API_BASE}/rejectAppointment`, appt.id)
             .then(() => {
-              Alert.alert('已拒绝', '该预约已拒绝');
+              Alert.alert('Rejected', 'The appointment has been rejected');
               return afterActionRefresh();
             })
-            .catch(e => Alert.alert('失败', e.message))
+            .catch(e => Alert.alert('Failed', e.message))
             .finally(() => setActionBusyId(null));
         }
       }
@@ -138,17 +138,17 @@ const StudentScreen = () => {
   };
 
   const handleCancel = (appt: Appointment) => {
-    Alert.alert('删除预约', '确认删除该预约吗？', [
-      { text: '否', style: 'cancel' },
+    Alert.alert('Delete Appointment', 'Are you sure you want to delete this appointment?', [
+      { text: 'No', style: 'cancel' },
       {
-        text: '是', style: 'destructive', onPress: () => {
+        text: 'Yes', style: 'destructive', onPress: () => {
           setActionBusyId(appt.id);
           postAction(`${API_BASE}/deleteAppointment`, appt.id)
             .then(() => {
-              Alert.alert('已删除', '预约已删除');
+              Alert.alert('Deleted', 'The appointment has been deleted');
               return afterActionRefresh();
             })
-            .catch(e => Alert.alert('失败', e.message))
+            .catch(e => Alert.alert('Failed', e.message))
             .finally(() => setActionBusyId(null));
         }
       }

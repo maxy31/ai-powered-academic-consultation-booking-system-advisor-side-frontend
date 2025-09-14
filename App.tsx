@@ -56,9 +56,9 @@ function MainTabs() {
         headerRight: () => <NotificationBell navigation={navigation} />,
       })}
     >
-      <Tab.Screen name="Announcement" component={AnnouncementScreen} />
-      <Tab.Screen name="SAppointment" component={StudentScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Announcement" component={AnnouncementScreen} options={{ tabBarIcon: ({ color, size }) => <Ionicons name="megaphone-outline" color={color} size={size} /> }} />
+      <Tab.Screen name="Appointment" component={StudentScreen} options={{ tabBarIcon: ({ color, size }) => <Ionicons name="people-circle-outline" color={color} size={size} /> }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarIcon: ({ color, size }) => <Ionicons name="person-circle-outline" color={color} size={size} /> }} />
     </Tab.Navigator>
   );
 }

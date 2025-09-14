@@ -90,10 +90,10 @@ const SearchScreen = () => {
       const data: AvailabilitySlot[] = await res.json();
       setSlots(data);
     } catch (e: any) {
-      if (e.name === 'AbortError') setError('请求超时');
-      else if (e.message === 'NO_TOKEN') setError('未获取到登录令牌');
-      else if (e.message === 'NO_APPT_ID') setError('缺少预约ID');
-      else setError('加载失败');
+      if (e.name === 'AbortError') setError('Timeout');
+      else if (e.message === 'NO_TOKEN') setError('Missing authentication token');
+      else if (e.message === 'NO_APPT_ID') setError('Missing appointment ID');
+      else setError('Loading failed');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -188,11 +188,11 @@ const SearchScreen = () => {
 
   const editAppointment = async () => {
     if (!selectedObj || !selectedDate || submitting) return;
-    if (!appointmentId) { Alert.alert('错误', '缺少预约ID'); return; }
+    if (!appointmentId) { Alert.alert('Error', 'Missing appointment ID'); return; }
     try {
       setSubmitting(true);
       const token = await AsyncStorage.getItem('jwtToken');
-      if (!token) { Alert.alert('错误', '未获取到登录令牌'); return; }
+      if (!token) { Alert.alert('Error', 'Missing authentication token'); return; }
       const yyyy = selectedDate.getFullYear();
       const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const dd = String(selectedDate.getDate()).padStart(2, '0');
@@ -213,18 +213,18 @@ const SearchScreen = () => {
       });
       clearTimeout(timer);
       if (!res.ok) {
-        let msg = `提交失败 (${res.status})`;
+        let msg = `Submission failed (${res.status})`;
         try { const t = await res.text(); if (t) msg = t; } catch {}
-        Alert.alert('失败', msg);
+        Alert.alert('Failed', msg);
         return;
       }
-      // 成功：返回上一页，StudentScreen 会在 focus 时自动刷新
-      Alert.alert('成功', '预约已更新', [
-        { text: '确定', onPress: () => navigation.goBack() }
+      // Success: Go back to the previous page, StudentScreen will refresh automatically on focus
+      Alert.alert('Success', 'The appointment has been updated', [
+        { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     } catch (e: any) {
-      if (e.name === 'AbortError') Alert.alert('超时', '请求超时, 请重试');
-      else Alert.alert('错误', '网络或服务器错误');
+      if (e.name === 'AbortError') Alert.alert('Timeout', 'Request timed out, please try again');
+      else Alert.alert('Error', 'Network or server error');
     } finally {
       setSubmitting(false);
     }
@@ -234,7 +234,7 @@ const SearchScreen = () => {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#8C8CFF" />
-        <Text style={styles.loadingText}>加载中...</Text>
+        <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
   }
@@ -283,7 +283,7 @@ const SearchScreen = () => {
         </View>
         {error && (
           <TouchableOpacity onPress={() => fetchData()} style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}，点此重试</Text>
+            <Text style={styles.errorText}>{error}，Press to retry</Text>
           </TouchableOpacity>
         )}
   <SectionList<AvailabilitySlot, { title: string; data: AvailabilitySlot[] }>
@@ -295,7 +295,7 @@ const SearchScreen = () => {
           renderSectionHeader={renderSectionHeader}
           stickySectionHeadersEnabled
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#5B5BFF"]} />}
-          ListEmptyComponent={!loading ? <Text style={styles.emptyText}>暂无可用时间段</Text> : null}
+          ListEmptyComponent={!loading ? <Text style={styles.emptyText}>No available time slots</Text> : null}
         />
       </View>
   <View style={styles.footerBar}> 
